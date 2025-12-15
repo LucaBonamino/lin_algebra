@@ -174,6 +174,43 @@ impl MatrixTrait<u8> for GF2Matrix {
 
 impl GF2Matrix  {
 
+    fn apply_operations(operations: &Vec<(usize, usize)>, v: Vec<u8>) -> Vec<u8> {
+        let mut result = v.clone();
+        for &(op1, op2) in operations.iter() {
+            result[op1] = (result[op1] + result[op2]) % 2;
+        }
+        result
+    }
+
+    /// Returns the column of the matrix by column index.
+    fn column(&self, idx: usize) -> Vec<u8> {
+        self.elements
+            .iter()
+            .map(|row| row[idx])
+            .collect()
+    }
+
+    /// Solves for X such that equation A*X = B where A  and B are GF2Matrix natrices.
+    pub fn solve_system(&self, y: &GF2Matrix) -> GF2Matrix{
+        let mut solution: Vec<Vec<u8>> = Vec::new();
+        if self.rank() < self.ncols(){
+            panic!("Matrix must have full rank");
+        }
+        let (ech, operations) = self.echelon_form();
+        let to_remove = ech.nrows() - ech.rank();
+        for i  in 0..y.ncols(){
+            let mut solved_b = Self::apply_operations(&operations, y.column(i));
+            for _ in 0..to_remove{
+                solved_b.remove(solved_b.len()-1);
+            }
+            solution.push(solved_b);
+        }
+
+        GF2Matrix::new(solution)
+
+    }
+
+
     fn swap_rows(&mut self, row1: usize, row2: usize) {
         self.elements.swap(row1, row2);
     }
