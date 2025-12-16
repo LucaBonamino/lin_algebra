@@ -95,4 +95,94 @@ mod tests {
         assert_eq!(mat.kernel(), vec![vec![0,0,1,0], vec![0,1,0,1]])
     }
 
+    #[test]
+    fn test_solve_matrix_system(){
+        let left_elements = vec![
+            vec![1,0,0],
+            vec![0,1,1],
+            vec![1,0,1]
+        ];
+
+        let right_elements = vec![
+            vec![0,0,1],
+            vec![0,1,1],
+            vec![1,1,1]
+        ];
+
+        let m = GF2Matrix::new(left_elements);
+        let rm = GF2Matrix::new(right_elements);
+        let r = m.solve_matrix_system(&rm);
+        assert_eq!(r.elements, vec![vec![0,1,1], vec![0,0,1], vec![1,1,0]]);
+    }
+
+    #[test]
+    fn test_solve_matrix_system_linear_dependence(){
+        let left_elements = vec![
+            vec![1,0,0],
+            vec![0,1,1],
+            vec![1,0,1],
+            vec![1,1,1]
+        ];
+
+        let right_elements = vec![
+            vec![0,0,1],
+            vec![0,1,1],
+            vec![1,1,1],
+            vec![1,1,0],
+        ];
+
+        let m = GF2Matrix::new(left_elements);
+        let rm = GF2Matrix::new(right_elements);
+        let r = m.solve_matrix_system(&rm);
+        assert_eq!(r.elements, vec![vec![0,1,1], vec![0,0,1], vec![1,1,0]]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Matrix must have full rank")]
+    fn test_solve_matrix_system_no_full_rank(){
+        let left_elements = vec![
+            vec![1,0,0],
+            vec![0,1,1]
+        ];
+
+        let right_elements = vec![
+            vec![0,0,1],
+            vec![0,1,1],
+            vec![1,1,1]
+        ];
+
+        let m = GF2Matrix::new(left_elements);
+        let rm = GF2Matrix::new(right_elements);
+        m.solve_matrix_system(&rm);
+    }
+
+    #[test]
+    fn test_solve(){
+        let left_elements = vec![
+            vec![1,0,0],
+            vec![0,1,1],
+            vec![1,0,1]
+        ];
+
+        let b = vec![0,0,1];
+
+        let m = GF2Matrix::new(left_elements);
+        let r = m.solve(&b);
+        assert_eq!(r, vec![0,1,1]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Matrix must have full rank")]
+    fn test_solve_no_full_rank(){
+        let left_elements = vec![
+            vec![1,0,0],
+            vec![0,1,1]
+        ];
+
+        let b = vec![0,0,1];
+
+        let m = GF2Matrix::new(left_elements);
+        m.solve(&b);
+    }
+
 }
