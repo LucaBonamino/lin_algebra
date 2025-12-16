@@ -174,7 +174,7 @@ impl MatrixTrait<u8> for GF2Matrix {
 
 impl GF2Matrix  {
 
-    fn apply_operations(operations: &Vec<(usize, usize)>, v: Vec<u8>) -> Vec<u8> {
+    fn apply_operations(operations: &Vec<(usize, usize)>, v: &Vec<u8>) -> Vec<u8> {
         let mut result = v.clone();
         for &(op1, op2) in operations.iter() {
             result[op1] = (result[op1] + result[op2]) % 2;
@@ -199,7 +199,7 @@ impl GF2Matrix  {
         let (ech, operations) = self.echelon_form();
         let to_remove = ech.nrows() - ech.rank();
         for i  in 0..y.ncols(){
-            let mut solved_b = Self::apply_operations(&operations, y.column(i));
+            let mut solved_b = Self::apply_operations(&operations, &y.column(i));
             for _ in 0..to_remove{
                 solved_b.remove(solved_b.len()-1);
             }
@@ -207,6 +207,22 @@ impl GF2Matrix  {
         }
 
         GF2Matrix::new(solution)
+
+    }
+
+    /// Solves for X such that equation A*x = b where A  is a GF2Matrix and b a Vec<u8>.
+    pub fn solve(&self, b: &Vec<u8>) -> Vec<u8>{
+        // et mut y_copy = y.clone();
+        if self.rank() < self.ncols(){
+            panic!("Matrix must have full rank");
+        }
+        let (ech, operations) = self.echelon_form();
+        let to_remove = ech.nrows() - ech.rank();
+        let mut solved_b= Self::apply_operations(&operations, b);
+        for _ in 0..to_remove{
+            solved_b.remove(solved_b.len()-1);
+        }
+        solved_b
 
     }
 
