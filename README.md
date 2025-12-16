@@ -54,7 +54,7 @@ fn main() {
     let y_matrix = gf2_matrix::GF2Matrix::new(
         vec![vec![1,0,0,1], vec![1,1,0,1], vec![0,1,0,1]]
     )
-    println!("x: {:?}", gf2_mat.solve:matrix_system(&y_matrix));
+    println!("x: {:?}", gf2_mat.solve_matrix_system(&y_matrix));
 
 }
 ```
