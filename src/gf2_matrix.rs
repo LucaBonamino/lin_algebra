@@ -191,7 +191,7 @@ impl GF2Matrix  {
     }
 
     /// Solves for X such that equation A*X = B where A  and B are GF2Matrix natrices.
-    pub fn solve_system(&self, y: &GF2Matrix) -> GF2Matrix{
+    pub fn solve_matrix_system(&self, y: &GF2Matrix) -> GF2Matrix{
         let mut solution: Vec<Vec<u8>> = Vec::new();
         if self.rank() < self.ncols(){
             panic!("Matrix must have full rank");
