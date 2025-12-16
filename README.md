@@ -45,6 +45,17 @@ fn main() {
 
     // Rank
     println!("Rank {}", gf2_mat.rank());
+
+    // Solve M x = b
+    let b = vec![1,0,0,1]
+    println!("x: {:?}", gf2_mat.solve(&b));
+
+    // Solve A X = Y
+    let y_matrix = gf2_matrix::GF2Matrix::new(
+        vec![vec![1,0,0,1], vec![1,1,0,1], vec![0,1,0,1]]
+    )
+    println!("x: {:?}", gf2_mat.solve:matrix_system(&y_matrix));
+
 }
 ```
 

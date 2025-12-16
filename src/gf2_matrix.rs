@@ -191,6 +191,13 @@ impl GF2Matrix  {
     }
 
     /// Solves for X such that equation A*X = B where A  and B are GF2Matrix natrices.
+    /// 
+    /// # Arguments 
+    /// 
+    /// * `y` - right hand side matrix: GF2Matrix such that self * X = Y
+    /// 
+    /// # Returns
+    /// Matrix X such that self * X = Y.
     pub fn solve_matrix_system(&self, y: &GF2Matrix) -> GF2Matrix{
         let mut solution: Vec<Vec<u8>> = Vec::new();
         if self.rank() < self.ncols(){
@@ -211,6 +218,13 @@ impl GF2Matrix  {
     }
 
     /// Solves for X such that equation A*x = b where A  is a GF2Matrix and b a Vec<u8>.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `b`- right hand side vector: such that self*x = b
+    /// 
+    /// # Return
+    /// x such that self*x = b
     pub fn solve(&self, b: &Vec<u8>) -> Vec<u8>{
         // et mut y_copy = y.clone();
         if self.rank() < self.ncols(){
