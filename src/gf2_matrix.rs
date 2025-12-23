@@ -1,7 +1,7 @@
-use crate::matrix::{MatrixTrait, Matrix};
+use crate::matrix::{Matrix, MatrixTrait};
 
 /// GF(2) matrix.
-/// 
+///
 /// Implements the trait MatrixTrait: needs to implement
 /// - rank
 /// - kernel
@@ -11,16 +11,15 @@ use crate::matrix::{MatrixTrait, Matrix};
 pub type GF2Matrix = Matrix<u8>;
 
 impl MatrixTrait<u8> for GF2Matrix {
-    
     /// Checks if a GF(2) matrix is in reduced row echelon form (RREF).
     ///
     /// # Returns
     /// `true` if the matrix is in reduced row echelon form; otherwise, `false`.
-    fn is_reduced_echelon(&self) -> bool{
+    fn is_reduced_echelon(&self) -> bool {
         let nrows = self.nrows();
         let mut old_piv = 0;
         let mut found_zero_row = false;
-        for i in 0..nrows{
+        for i in 0..nrows {
             let piv = GF2Matrix::get_pivot(&self.elements[i]);
             match piv {
                 None => {
@@ -37,7 +36,6 @@ impl MatrixTrait<u8> for GF2Matrix {
                         }
                     }
                     old_piv = piv;
-
                 }
             }
         }
@@ -45,22 +43,20 @@ impl MatrixTrait<u8> for GF2Matrix {
     }
 
     /// Computes the rank of the linear applocation represented by a GF(2) matrix.
-    /// 
+    ///
     /// If the matrix is not in echelon form (RREF),
     /// it first converts the matrix to its RREF before computing the rank.
-    /// 
+    ///
     /// # Returns
     /// An integer representing the rank of the matrix.
     ///
-    fn rank(&self) -> usize{
-        if self.is_reduced_echelon(){
-            return self.rank_echelon_form()
-        }
-        else {
+    fn rank(&self) -> usize {
+        if self.is_reduced_echelon() {
+            return self.rank_echelon_form();
+        } else {
             let (ech_form, _) = self.echelon_form();
-            return ech_form.rank_echelon_form();   
+            return ech_form.rank_echelon_form();
         }
-
     }
 
     /// Computes the base of the kernel of the linear applocation represented by a GF(2) matrix.
@@ -70,12 +66,11 @@ impl MatrixTrait<u8> for GF2Matrix {
     ///
     /// # Returns
     /// A vector of row vectors, each representing a basis vector of the kernel.
-    fn kernel(&self)-> Vec<Vec<u8>>{
-        if self.is_reduced_echelon(){
+    fn kernel(&self) -> Vec<Vec<u8>> {
+        if self.is_reduced_echelon() {
             println!("{:?}", self.elements);
             return self.kernel_echelon_form();
-        }
-        else {
+        } else {
             let (ech_form, _) = self.echelon_form();
             println!("{:?}", ech_form);
             return ech_form.kernel_echelon_form();
@@ -83,14 +78,14 @@ impl MatrixTrait<u8> for GF2Matrix {
     }
 
     /// Computes the reduced echelon form (RREF) of a GF(2) matrix along with the history of all row operations applied.
-    /// 
+    ///
     /// # Returns
-    /// A tuple where the first element is the RREF form of the matrix and 
+    /// A tuple where the first element is the RREF form of the matrix and
     /// the second is a Vec containing the history of the row operations applied to the matrix to compute the RREF.
     /// Each element of the row operations vector, is a tuple heving the modified row as first element and the row to which it has been summed as second element:
     ///     R1 -> R1 + R2 is represented the entry (R1, R2)
     /// The swap of two rows is represented as 3 entries:
-    ///     swap(R1, R2) is represented as (R1, R2), (R2,R1), (R1,R2) 
+    ///     swap(R1, R2) is represented as (R1, R2), (R2,R1), (R1,R2)
     fn echelon_form(&self) -> (Self, Vec<(usize, usize)>) {
         let mut m_copy = self.clone();
         let rows = m_copy.nrows();
@@ -134,13 +129,13 @@ impl MatrixTrait<u8> for GF2Matrix {
     }
 
     /// Computes the image of the linear application corresponding to a GF(2) matrix.
-    /// 
+    ///
     /// If the matrix is not in reduced row echelon form (RREF),
     /// it first converts the matrix to its RREF before computing the image.
-    /// 
+    ///
     /// # Returns
     /// A vector of row vectors, each representing a basis vector of the image.
-    fn image(&self) -> Vec<Vec<u8>>{
+    fn image(&self) -> Vec<Vec<u8>> {
         let mat = if !self.is_reduced_echelon() {
             let (m, _) = self.echelon_form();
             m
@@ -169,11 +164,9 @@ impl MatrixTrait<u8> for GF2Matrix {
     fn get_pivot(row: &Vec<u8>) -> Option<usize> {
         row.iter().position(|&x| x == 1)
     }
-
 }
 
-impl GF2Matrix  {
-
+impl GF2Matrix {
     fn apply_operations(operations: &Vec<(usize, usize)>, v: &Vec<u8>) -> Vec<u8> {
         let mut result = v.clone();
         for &(op1, op2) in operations.iter() {
@@ -184,62 +177,56 @@ impl GF2Matrix  {
 
     /// Returns the column of the matrix by column index.
     fn column(&self, idx: usize) -> Vec<u8> {
-        self.elements
-            .iter()
-            .map(|row| row[idx])
-            .collect()
+        self.elements.iter().map(|row| row[idx]).collect()
     }
 
     /// Solves for X such that equation A*X = B where A  and B are GF2Matrix natrices.
-    /// 
-    /// # Arguments 
-    /// 
+    ///
+    /// # Arguments
+    ///
     /// * `y` - right hand side matrix: GF2Matrix such that self * X = Y
-    /// 
+    ///
     /// # Returns
     /// Matrix X such that self * X = Y.
-    pub fn solve_matrix_system(&self, y: &GF2Matrix) -> GF2Matrix{
+    pub fn solve_matrix_system(&self, y: &GF2Matrix) -> GF2Matrix {
         let mut solution: Vec<Vec<u8>> = Vec::new();
-        if self.rank() < self.ncols(){
+        if self.rank() < self.ncols() {
             panic!("Matrix must have full rank");
         }
         let (ech, operations) = self.echelon_form();
         let to_remove = ech.nrows() - ech.rank();
-        for i  in 0..y.ncols(){
+        for i in 0..y.ncols() {
             let mut solved_b = Self::apply_operations(&operations, &y.column(i));
-            for _ in 0..to_remove{
-                solved_b.remove(solved_b.len()-1);
+            for _ in 0..to_remove {
+                solved_b.remove(solved_b.len() - 1);
             }
             solution.push(solved_b);
         }
 
         GF2Matrix::new(solution)
-
     }
 
     /// Solves for X such that equation A*x = b where A  is a GF2Matrix and b a Vec<u8>.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `b`- right hand side vector: such that self*x = b
-    /// 
+    ///
     /// # Return
     /// x such that self*x = b
-    pub fn solve(&self, b: &Vec<u8>) -> Vec<u8>{
+    pub fn solve(&self, b: &Vec<u8>) -> Vec<u8> {
         // et mut y_copy = y.clone();
-        if self.rank() < self.ncols(){
+        if self.rank() < self.ncols() {
             panic!("Matrix must have full rank");
         }
         let (ech, operations) = self.echelon_form();
         let to_remove = ech.nrows() - ech.rank();
-        let mut solved_b= Self::apply_operations(&operations, b);
-        for _ in 0..to_remove{
-            solved_b.remove(solved_b.len()-1);
+        let mut solved_b = Self::apply_operations(&operations, b);
+        for _ in 0..to_remove {
+            solved_b.remove(solved_b.len() - 1);
         }
         solved_b
-
     }
-
 
     fn swap_rows(&mut self, row1: usize, row2: usize) {
         self.elements.swap(row1, row2);
@@ -259,7 +246,6 @@ impl GF2Matrix  {
         }
         count
     }
-
 
     fn kernel_echelon_form(&self) -> Vec<Vec<u8>> {
         let rows = self.nrows();
@@ -300,5 +286,4 @@ impl GF2Matrix  {
 
         kernel_base
     }
-    
 }

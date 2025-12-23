@@ -61,3 +61,29 @@ fn main() {
 
 ## License
 MIT
+
+## Python bindings
+
+Python bindings are provided in the separate project
+[`gf2_lin_algebra`](https://github.com/LucaBonamino/gf2_lin_algebra).
+
+They are intentionally limited to GF(2) and focus on performance and simplicity. The Rust crate `lin_algebra` is designed to be more general.
+
+## Roadmap
+
+This project is under active development, with a focus on both research and practical use.
+
+Current and planned directions include:
+- improving the internal design of GF(2) matrices
+- adding optimized representations (e.g. bit-packed storage)
+- generalizing the Rust core to support linear algebra over arbitrary fields
+
+The Python bindings (`gf2_lin_algebra`) are intentionally limited to GF(2), while the Rust crate (`lin_algebra`) aims to be more general.
+
+For a detailed list of planned improvements and areas where help is welcome, see [ROADMAP.md](ROADMAP.md).
+
+## Contributing
+
+Contributions are welcome!
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
