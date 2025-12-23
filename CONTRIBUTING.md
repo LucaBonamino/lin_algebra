@@ -26,12 +26,13 @@ Please keep pull requests focused and well-described.
 ```bash
 cargo build
 cargo test
+cargo fmt
 ```
 
 
 ## Code Style
 - Prefer clear names over clever code
-- Add docstrings for public methods
+- Add documentation comments (///) for public items
 - Add tests for new functionality when possible
 
 ## Question or ideas?
