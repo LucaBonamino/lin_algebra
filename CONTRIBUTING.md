@@ -32,7 +32,7 @@ cargo fmt
 
 ## Code Style
 - Prefer clear names over clever code
-- Add documentation comments (///) for public items
+- Add documentation comments (```///```) for public items
 - Add tests for new functionality when possible
 
 ## Versioning
