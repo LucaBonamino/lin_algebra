@@ -189,18 +189,16 @@ impl GF2Matrix {
     /// # Returns
     /// Matrix X such that self * X = Y.
     pub fn solve_matrix_system(&self, y: &GF2Matrix) -> GF2Matrix {
-        
         if self.rank() < self.ncols() {
             panic!("Matrix must have full rank");
         }
 
         let (ech, operations) = self.echelon_form();
         let to_remove = ech.nrows() - ech.rank();
-        
-        let n_rows = self.ncols();
-        let n_cols = y.ncols();      
 
-        
+        let n_rows = self.ncols();
+        let n_cols = y.ncols();
+
         let mut elements = vec![vec![0u8; n_cols]; n_rows];
         for j in 0..y.ncols() {
             let mut solved_b = Self::apply_operations(&operations, &y.column(j));
