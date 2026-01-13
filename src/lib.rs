@@ -150,7 +150,7 @@ mod tests {
         let r = m.solve_matrix_system(&rm);
         assert_eq!(
             r.elements,
-            vec![vec![0, 1, 1], vec![0, 0, 1], vec![1, 1, 0]]
+            vec![vec![0, 0, 1], vec![1, 0, 1], vec![1, 1, 0]]
         );
     }
 
@@ -165,7 +165,7 @@ mod tests {
         let r = m.solve_matrix_system(&rm);
         assert_eq!(
             r.elements,
-            vec![vec![0, 1, 1], vec![0, 0, 1], vec![1, 1, 0]]
+            vec![vec![0, 0, 1], vec![1, 0, 1], vec![1, 1, 0]]
         );
     }
 
