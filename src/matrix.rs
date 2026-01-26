@@ -1,9 +1,17 @@
-use num_traits::{Zero, One};
-use std::ops::{BitXor, BitAnd, Shr};
+use num_traits::{One, Zero};
+use std::ops::{BitAnd, BitXor, Shr};
 
 pub trait Number:
-    Copy + Eq + Ord + BitXor<Output = Self> + BitAnd<Output = Self> + Shr<usize, Output = Self> + Zero + One
-    {}
+    Copy
+    + Eq
+    + Ord
+    + BitXor<Output = Self>
+    + BitAnd<Output = Self>
+    + Shr<usize, Output = Self>
+    + Zero
+    + One
+{
+}
 
 impl Number for u8 {}
 impl Number for u16 {}
