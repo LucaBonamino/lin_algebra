@@ -1,9 +1,22 @@
-use num_traits::Zero;
-use std::ops::BitXor;
+use num_traits::{One, Zero};
+use std::ops::{BitAnd, BitXor, Shr};
 
-pub trait Number: Copy + Eq + Ord + BitXor<Self> + Zero {}
+pub trait Number:
+    Copy
+    + Eq
+    + Ord
+    + BitXor<Output = Self>
+    + BitAnd<Output = Self>
+    + Shr<usize, Output = Self>
+    + Zero
+    + One
+{
+}
 
 impl Number for u8 {}
+impl Number for u16 {}
+impl Number for u32 {}
+impl Number for u64 {}
 
 pub trait MatrixTrait<T: Number>: HasElements<T> {
     fn rank(&self) -> usize;
