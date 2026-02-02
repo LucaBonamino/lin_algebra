@@ -19,6 +19,24 @@ pub struct InterGF2Matrix<T: Number> {
     n: usize,
 }
 
+// impl From<GF2Matrix> for InterGF2Matrix<u8> {
+//     fn from(m: GF2Matrix) -> Self {
+//         InterGF2Matrix {
+//             elements: m.,
+//             n: m.ncols(),
+//         }
+//     }
+// }
+
+// impl From<&GF2Matrix> for InterGF2Matrix<u8> {
+//     fn from(m: &GF2Matrix) -> Self {
+//         InterGF2Matrix {
+//             elements: m.data,
+//             n: m.n,
+//         }
+//     }
+// }
+
 impl<T: Number> InterGF2Matrix<T> {
     /// Creates a new integer-encoded matrix.
     ///
@@ -126,6 +144,22 @@ impl<T: Number> InterGF2Matrix<T> {
             }
         };
         GF2Matrix::new(matrix_elements)
+    }
+
+    pub fn from_vec(vect: Vec<T>) -> Self {
+        let n = vect.len();
+        Self {
+            elements: vect,
+            n: n,
+        }
+    }
+
+    pub fn from_vec_referenced(vect: &Vec<T>) -> Self {
+        let n = vect.len();
+        Self {
+            elements: vect.to_vec(),
+            n: n,
+        }
     }
 }
 

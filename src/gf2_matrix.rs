@@ -1,6 +1,5 @@
 use crate::matrix::{Matrix, MatrixTrait};
 
-/// GF(2) matrix.
 ///
 /// Implements the trait MatrixTrait: needs to implement
 /// - rank
