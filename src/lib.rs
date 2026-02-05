@@ -1,6 +1,7 @@
 pub mod gf2_matrix;
 pub mod matrix;
-pub use gf2_matrix::GF2Matrix;
+use gf2_matrix::GF2Matrix;
+mod vector_space; 
 
 #[cfg(test)]
 mod tests {
