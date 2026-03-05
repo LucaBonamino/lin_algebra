@@ -1,15 +1,15 @@
 use crate::gf2_matrix::GF2Matrix;
-use crate::int_gf2_matrix::{BitOrder, InterGF2Matrix};
+use crate::packed_gf2_matrix::{BitOrder, PackedGF2Matrix};
 use crate::matrix::{Matrix, Number};
 
-impl<T: Number> From<&InterGF2Matrix<T>> for GF2Matrix {
-    fn from(int_matrix: &InterGF2Matrix<T>) -> Self {
+impl<T: Number> From<&PackedGF2Matrix<T>> for GF2Matrix {
+    fn from(int_matrix: &PackedGF2Matrix<T>) -> Self {
         int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::MSB)
     }
 }
 
-impl<T: Number> From<InterGF2Matrix<T>> for GF2Matrix {
-    fn from(int_matrix: InterGF2Matrix<T>) -> Self {
+impl<T: Number> From<PackedGF2Matrix<T>> for GF2Matrix {
+    fn from(int_matrix: PackedGF2Matrix<T>) -> Self {
         int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::MSB)
     }
 }
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<T: Number> From<GF2Matrix> for InterGF2Matrix<T>
+impl<T: Number> From<GF2Matrix> for PackedGF2Matrix<T>
 where
     T: Number + From<usize>,
 {
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<T: Number> From<&GF2Matrix> for InterGF2Matrix<T>
+impl<T: Number> From<&GF2Matrix> for PackedGF2Matrix<T>
 where
     T: Number + From<usize>,
 {
@@ -61,13 +61,13 @@ where
     }
 }
 
-impl<T: Number> From<Vec<T>> for InterGF2Matrix<T> {
+impl<T: Number> From<Vec<T>> for PackedGF2Matrix<T> {
     fn from(value: Vec<T>) -> Self {
         Self::from_vec(value)
     }
 }
 
-impl<T: Number> From<&Vec<T>> for InterGF2Matrix<T> {
+impl<T: Number> From<&Vec<T>> for PackedGF2Matrix<T> {
     fn from(value: &Vec<T>) -> Self {
         Self::from_vec_referenced(value)
     }
@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn test_int_mtrix_to_gf2_matrix_convertion() {
         let elements = vec![0, 1, 2, 4, 8];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = GF2Matrix::from(int_matrix);
         let expected = vec![
             vec![0, 0, 0, 0],
@@ -92,7 +92,7 @@ mod tests {
         ];
         assert_eq!(gf2_matrix.elements, expected);
 
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix: GF2Matrix = int_matrix.into();
         assert_eq!(gf2_matrix.elements, expected);
     }
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_int_mtrix_to_gf2_matrix_convertion_by_ref() {
         let elements = vec![0, 1, 2, 4, 8];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = GF2Matrix::from(&int_matrix);
         let expected = vec![
             vec![0, 0, 0, 0],
@@ -111,7 +111,7 @@ mod tests {
         ];
         assert_eq!(gf2_matrix.elements, expected);
 
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix: GF2Matrix = (&int_matrix).into();
         assert_eq!(gf2_matrix.elements, expected);
     }

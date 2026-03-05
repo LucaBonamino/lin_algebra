@@ -14,7 +14,7 @@ pub enum BitOrder {
 ///
 /// This type is typically used as a compact or efficient
 /// representation before expanding into an explicit GF(2) matrix.
-pub struct InterGF2Matrix<T: Number> {
+pub struct PackedGF2Matrix<T: Number> {
     elements: Vec<T>,
     n: usize,
 }
@@ -37,7 +37,7 @@ pub struct InterGF2Matrix<T: Number> {
 //     }
 // }
 
-impl<T: Number> InterGF2Matrix<T> {
+impl<T: Number> PackedGF2Matrix<T> {
     /// Creates a new integer-encoded matrix.
     ///
     /// # Arguments
@@ -48,9 +48,9 @@ impl<T: Number> InterGF2Matrix<T> {
     /// # Example
     ///
     /// ```rust
-    /// # use lin_algebra::int_gf2_matrix::InterGF2Matrix;
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
     ///
-    /// let m = InterGF2Matrix::new(vec![0b1011u8, 0b0101u8], 4);
+    /// let m = PackedGF2Matrix::new(vec![0b1011u8, 0b0101u8], 4);
     /// ```
     pub fn new(elements: Vec<T>, n: usize) -> Self {
         Self {
@@ -114,9 +114,9 @@ impl<T: Number> InterGF2Matrix<T> {
     /// # Example
     ///
     /// ```rust
-    /// # use lin_algebra::int_gf2_matrix::{InterGF2Matrix, BitOrder};
+    /// # use lin_algebra::packed_gf2_matrix::{PackedGF2Matrix, BitOrder};
     ///
-    /// let m = InterGF2Matrix::new(vec![0b0010u8], 4);
+    /// let m = PackedGF2Matrix::new(vec![0b0010u8], 4);
     /// let gf2 = m.from_int_matrix_to_gf2_matrix(BitOrder::LSB);
     ///
     /// // Result: [[0, 1, 0, 0]]
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_from_int_matrix_to_gf2_matrix_u8_lsb() {
         let elements = vec![0, 1, 2, 4, 8];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::LSB);
         let expected = vec![
             vec![0, 0, 0, 0],
@@ -183,7 +183,7 @@ mod tests {
         assert_eq!(gf2_matrix.elements, expected);
 
         let elements = vec![0, 1, 2, 3, 5];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::LSB);
         let expected = vec![
             vec![0, 0, 0, 0],
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn test_from_int_matrix_to_gf2_matrix_u8_msb() {
         let elements = vec![0, 1, 2, 4, 8];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::MSB);
         let expected = vec![
             vec![0, 0, 0, 0],
@@ -210,7 +210,7 @@ mod tests {
         assert_eq!(gf2_matrix.elements, expected);
 
         let elements = vec![0, 1, 2, 3, 5];
-        let int_matrix = InterGF2Matrix::<u8>::new(elements.clone(), 4);
+        let int_matrix = PackedGF2Matrix::<u8>::new(elements.clone(), 4);
         let gf2_matrix = int_matrix.from_int_matrix_to_gf2_matrix(BitOrder::MSB);
         let expected = vec![
             vec![0, 0, 0, 0],

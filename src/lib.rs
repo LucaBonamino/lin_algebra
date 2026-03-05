@@ -1,5 +1,5 @@
 pub mod gf2_matrix;
-pub mod int_gf2_matrix;
+pub mod packed_gf2_matrix;
 pub mod matrix;
 pub use gf2_matrix::GF2Matrix;
 pub mod convert;
