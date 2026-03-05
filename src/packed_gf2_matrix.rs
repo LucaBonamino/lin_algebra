@@ -14,28 +14,12 @@ pub enum BitOrder {
 ///
 /// This type is typically used as a compact or efficient
 /// representation before expanding into an explicit GF(2) matrix.
+#[derive(Clone)]
 pub struct PackedGF2Matrix<T: Number> {
     elements: Vec<T>,
     n: usize,
 }
 
-// impl From<GF2Matrix> for InterGF2Matrix<u8> {
-//     fn from(m: GF2Matrix) -> Self {
-//         InterGF2Matrix {
-//             elements: m.,
-//             n: m.ncols(),
-//         }
-//     }
-// }
-
-// impl From<&GF2Matrix> for InterGF2Matrix<u8> {
-//     fn from(m: &GF2Matrix) -> Self {
-//         InterGF2Matrix {
-//             elements: m.data,
-//             n: m.n,
-//         }
-//     }
-// }
 
 impl<T: Number> PackedGF2Matrix<T> {
     /// Creates a new integer-encoded matrix.
@@ -160,6 +144,50 @@ impl<T: Number> PackedGF2Matrix<T> {
             elements: vect.to_vec(),
             n: n,
         }
+    }
+
+    fn get_element(&self, row: usize, col: usize) -> u8 {
+        ((self.elements[row].into_usize() >> (self.ncols() - 1 - col)) & 1) as u8
+    }
+
+    fn swap_rows(&mut self, idx1: usize, idx2: usize) {
+        self.elements.swap(idx1, idx2);
+    }
+
+    pub fn echelon_form(&self) -> (Self, Vec<(usize, usize)>) {
+        let mut m_copy = self.clone();
+        let mut lead = 0;
+        let mut operations: Vec<(usize, usize)> = Vec::new();
+        for r in 0..self.nrows() {
+            if lead >= self.ncols() {
+                break;
+            }
+            let mut i = r;
+            while m_copy.get_element(i, lead) == 0 {
+                i += 1;
+                if i == self.nrows() {
+                    i = r;
+                    lead += 1;
+                    if lead == self.ncols() {
+                        return (m_copy, operations);
+                    }
+                }
+            }
+            m_copy.swap_rows(r, i);
+            if r != i {
+                operations.push((r, i));
+                operations.push((i, r));
+                operations.push((r, i));
+            }
+            for i in 0..self.nrows() {
+                if i != r && m_copy.get_element(i, lead) == 1 {
+                    m_copy.elements[i] = m_copy.elements[i] ^ m_copy.elements[r];
+                    operations.push((i, r));
+                }
+            }
+            lead += 1
+        }
+        (m_copy, operations)
     }
 }
 

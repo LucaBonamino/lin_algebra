@@ -11,14 +11,31 @@ pub trait Number:
     + Zero
     + One
 {
+    fn into_usize(self) -> usize;
 }
 
-impl Number for u8 {}
-impl Number for u16 {}
-impl Number for u32 {}
-impl Number for u64 {}
+impl Number for u8 {
+    fn into_usize(self) -> usize {
+        self as usize
+    }
+}
+impl Number for u16 {
+    fn into_usize(self) -> usize {
+        self as usize
+    }
+}
+impl Number for u32 {
+    fn into_usize(self) -> usize {
+        self as usize
+    }
+}
+impl Number for u64 {
+    fn into_usize(self) -> usize {
+        self as usize
+    }
+}
 
-pub trait MatrixTrait<T: Number>: HasElements<T> {
+pub trait MatrixTrait<T: Number>: MatrixCommon<T> {
     fn rank(&self) -> usize;
     fn kernel(&self) -> Vec<Vec<T>>;
     fn echelon_form(&self) -> (Self, Vec<(usize, usize)>)
@@ -26,19 +43,6 @@ pub trait MatrixTrait<T: Number>: HasElements<T> {
         Self: Sized;
     fn image(&self) -> Vec<Vec<T>>;
     fn is_reduced_echelon(&self) -> bool;
-    fn nrows(&self) -> usize {
-        self.elements().len()
-    }
-    fn ncols(&self) -> usize {
-        self.elements().get(0).map_or(0, |row| row.len())
-    }
-    fn get_pivot(vec: &Vec<T>) -> Option<usize> {
-        vec.iter().position(|&x| !x.is_zero())
-    }
-}
-
-pub trait HasElements<T: Number> {
-    fn elements(&self) -> &Vec<Vec<T>>;
 }
 
 #[derive(Clone, Debug)]
@@ -52,8 +56,23 @@ impl<T: Number> Matrix<T> {
     }
 }
 
-impl<T: Number> HasElements<T> for Matrix<T> {
-    fn elements(&self) -> &Vec<Vec<T>> {
-        &self.elements
+impl<T: Number> MatrixCommon<T> for Matrix<T> {
+    fn nrows(&self) -> usize {
+        self.elements.len()
+    }
+    fn ncols(&self) -> usize {
+        self.elements.first().map_or(0, |r| r.len())
+    }
+    fn row(&self, r: usize) -> &[T] {
+        &self.elements[r]
+    }
+}
+
+pub trait MatrixCommon<T: Number> {
+    fn nrows(&self) -> usize;
+    fn ncols(&self) -> usize;
+    fn row(&self, r: usize) -> &[T];
+    fn get_pivot(row: &[T]) -> Option<usize> {
+        row.iter().position(|&x| !x.is_zero())
     }
 }

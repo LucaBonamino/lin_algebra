@@ -1,6 +1,6 @@
 use crate::gf2_matrix::GF2Matrix;
-use crate::packed_gf2_matrix::{BitOrder, PackedGF2Matrix};
 use crate::matrix::{Matrix, Number};
+use crate::packed_gf2_matrix::{BitOrder, PackedGF2Matrix};
 
 impl<T: Number> From<&PackedGF2Matrix<T>> for GF2Matrix {
     fn from(int_matrix: &PackedGF2Matrix<T>) -> Self {
