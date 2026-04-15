@@ -25,7 +25,7 @@ Add the dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lin_algebra = "0.3.1"
+lin_algebra = "0.4.0"
 ```
 
 ## Usage
