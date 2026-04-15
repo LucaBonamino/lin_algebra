@@ -20,7 +20,6 @@ pub struct PackedGF2Matrix<T: Number> {
     n: usize,
 }
 
-
 impl<T: Number> PackedGF2Matrix<T> {
     /// Creates a new integer-encoded matrix.
     ///
@@ -130,6 +129,34 @@ impl<T: Number> PackedGF2Matrix<T> {
         GF2Matrix::new(matrix_elements)
     }
 
+    /// Creates a one-row bit-packed matrix from an owned vector of row data.
+    ///
+    /// Each element of `vect` is interpreted as one packed row of the matrix.
+    /// The number of columns is inferred from the length of the vector.
+    ///
+    /// # Parameters
+    ///
+    /// - `vect`: the vector containing the packed row elements.
+    ///
+    /// # Returns
+    ///
+    /// A `PackedGF2Matrix` whose internal storage is initialized from `vect`.
+    ///
+    /// # Notes
+    ///
+    /// - The input vector is moved into the matrix without cloning.
+    /// - The resulting matrix has `vect.len()` columns in its packed representation.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// # use lin_algebra::matrix::Number;
+    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    /// let (echelon, ops) = m.echelon_form();
+    ///
+    /// assert_eq!(m.ncols(), 3);
+    /// ```
     pub fn from_vec(vect: Vec<T>) -> Self {
         let n = vect.len();
         Self {
@@ -138,6 +165,36 @@ impl<T: Number> PackedGF2Matrix<T> {
         }
     }
 
+    /// Creates a one-row bit-packed matrix from a referenced vector of row data.
+    ///
+    /// Each element of `vect` is interpreted as one packed row of the matrix.
+    /// The number of columns is inferred from the length of the vector.
+    ///
+    /// # Parameters
+    ///
+    /// - `vect`: a reference to the vector containing the packed row elements.
+    ///
+    /// # Returns
+    ///
+    /// A `PackedGF2Matrix` whose internal storage is initialized from a clone
+    /// of `vect`.
+    ///
+    /// # Notes
+    ///
+    /// - The input vector is cloned using `to_vec()`.
+    /// - The resulting matrix owns its internal storage independently of the
+    ///   original vector.
+    /// - The resulting matrix has `vect.len()` columns in its packed representation.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let rows = vec![0b1010u8, 0b0110u8];
+    /// let m = PackedGF2Matrix::from_vec_referenced(&rows);
+    ///
+    /// assert_eq!(m.ncols(), 2);
+    /// ```
     pub fn from_vec_referenced(vect: &Vec<T>) -> Self {
         let n = vect.len();
         Self {
@@ -154,6 +211,50 @@ impl<T: Number> PackedGF2Matrix<T> {
         self.elements.swap(idx1, idx2);
     }
 
+    /// Computes the row echelon form of the bit-packed matrix over GF(2).
+    ///
+    ///
+    /// In addition to the transformed matrix, it records the sequence of
+    /// elementary row operations applied during the elimination process.   
+    ///
+    /// # Row Operations
+    ///
+    /// The following row operations may be recorded:
+    ///
+    /// - `(i, j)` with `i != j` represents adding row `j` to row `i`
+    ///   (that is, `row_i <- row_i + row_j` over GF(2)).
+    /// - A row swap between `r` and `i` is encoded as three additions:
+    ///   `(r, i)`, `(i, r)`, `(r, i)`.
+    ///
+    /// This encoding is valid over GF(2), where swapping two rows can be
+    /// expressed as a sequence of XOR-based row additions.
+    ///
+    /// # Returns
+    ///
+    /// A pair `(echelon_matrix, operations)` where:
+    ///
+    /// - `echelon_matrix` is the row echelon form of the matrix.
+    /// - `operations` is the list of row operations used to obtain it.
+    ///
+    /// # Notes
+    ///
+    /// - The computation is performed on a clone of the matrix; the original
+    ///   matrix is not modified.
+    /// - Since the matrix is over GF(2), pivots are always `1`.
+    /// - The elimination clears all other `1`s in each pivot column, so the
+    ///   result is closer to a reduced row echelon form than to a strictly
+    ///   upper-triangular echelon form.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// # use lin_algebra::matrix::Number;
+    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    /// let (echelon, ops) = m.echelon_form();
+    /// // `echelon` contains the transformed matrix over GF(2),
+    /// // and `ops` contains the recorded row operations.
+    /// ```
     pub fn echelon_form(&self) -> (Self, Vec<(usize, usize)>) {
         let mut m_copy = self.clone();
         let mut lead = 0;
