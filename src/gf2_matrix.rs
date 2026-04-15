@@ -10,6 +10,7 @@ use crate::matrix::{Matrix, MatrixCommon, MatrixTrait};
 pub type GF2Matrix = Matrix<u8>;
 
 impl MatrixTrait<u8> for GF2Matrix {
+
     /// Checks if a GF(2) matrix is in reduced row echelon form (RREF).
     ///
     /// # Returns
