@@ -1,10 +1,12 @@
 pub mod gf2_matrix;
 pub mod matrix;
+pub mod packed_gf2_matrix;
 pub use gf2_matrix::GF2Matrix;
+pub mod convert;
 
 #[cfg(test)]
 mod tests {
-    use crate::matrix::MatrixTrait;
+    use crate::matrix::{MatrixCommon, MatrixTrait};
 
     use super::*;
 

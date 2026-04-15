@@ -1,6 +1,5 @@
-use crate::matrix::{Matrix, MatrixTrait};
+use crate::matrix::{Matrix, MatrixCommon, MatrixTrait};
 
-/// GF(2) matrix.
 ///
 /// Implements the trait MatrixTrait: needs to implement
 /// - rank
@@ -11,6 +10,7 @@ use crate::matrix::{Matrix, MatrixTrait};
 pub type GF2Matrix = Matrix<u8>;
 
 impl MatrixTrait<u8> for GF2Matrix {
+
     /// Checks if a GF(2) matrix is in reduced row echelon form (RREF).
     ///
     /// # Returns
@@ -151,18 +151,6 @@ impl MatrixTrait<u8> for GF2Matrix {
             }
         }
         image_base
-    }
-
-    /// Returns the pivot index of a row in a GF(2) matrix.
-    ///
-    /// The pivot is defined as the index of the first non-zero (1) element in the row.
-    /// Returns `None` if the row contains only zeros.
-    ///
-    /// # Arguments
-    ///
-    /// * `row` - A reference to a vector representing a row in a binary matrix.```
-    fn get_pivot(row: &Vec<u8>) -> Option<usize> {
-        row.iter().position(|&x| x == 1)
     }
 }
 

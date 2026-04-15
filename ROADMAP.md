@@ -26,7 +26,7 @@ This change is primarily architectural and should preserve existing functionalit
 Introduce a bit-packed representation for `GF2Matrix` to improve performance and memory efficiency.
 
 Goals:
-- Add a bit-packed backend (e.g. using `u64` blocks)
+- Add functionality for optimized bit-packed matrix representations
 - Keep the current non-bit-packed representation for clarity,
   experimentation, and teaching
 - Allow both representations to coexist

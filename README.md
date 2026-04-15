@@ -2,13 +2,22 @@
 A Rust library for linear algebra.
 
 ## Features
-All operations are currently implemented for matrices over GF(2):
+Operations are currently implemented for matrices over GF(2), with both
+explicit and bit-packed representations:
 
-- Compute the echelon form of a matrix along with the history of all the row operations applied.
+- `GF2Matrix`: a standard explicit matrix representation over GF(2).
+- `PackedGF2Matrix`: a compact bit-packed representation for improved memory usage
+  and efficient bitwise operations.
+
+Supported operations include:
+
+- Compute the echelon form of a matrix along with the history of all row operations applied.
 - Compute the rank of the linear application represented by a matrix.
 - Compute the kernel of the linear application represented by a matrix.
 - Compute the image of the linear application represented by a matrix.
-- Solve system of equations in GF(2).
+- Solve systems of equations in GF(2).
+- Convert between packed and explicit GF(2) matrix representations.
+- Multiply a bit-packed matrix by a bit-packed vector.
 
 ## Installation
 
@@ -38,7 +47,7 @@ fn main() {
     );
 
     // Kernel
-    println!("Kenel {:?}", gf2_mat.kernel());
+    println!("Kernel {:?}", gf2_mat.kernel());
 
     // Image
     println!("Image {:?}", gf2_mat.image());
@@ -58,6 +67,47 @@ fn main() {
 
 }
 ```
+```rust
+use lin_algebra::packed_gf2_matrix::{BitOrder, PackedGF2Matrix};
+
+fn main() {
+    // Each integer encodes one row of the matrix in bit-packed form.
+    let packed = PackedGF2Matrix::<u8>::new(
+        vec![
+            0b1000u8,
+            0b0101u8,
+            0b0101u8,
+        ],
+        4,
+    );
+
+    let (echelon, ops) = packed.echelon_form();
+
+    println!("Packed echelon form: {:?}", echelon);
+    println!("Row operations: {:?}", ops);
+
+    // Convert to an explicit GF(2) matrix
+    let explicit = packed.from_int_matrix_to_gf2_matrix(BitOrder::LSB);
+    println!("Explicit matrix: {:?}", explicit);
+
+    // Example of packed matrix-vector multiplication
+    let v = 0b0011u8;
+    let result = PackedGF2Matrix::matrix_by_vector(&packed, &v);
+    println!("Packed matrix-vector product: {:?}", result);
+}
+```
+## Matrix Representations
+
+This crate currently provides two matrix representations over GF(2):
+
+- `GF2Matrix`: stores entries explicitly as `0` and `1`.
+  This is easier to inspect and manipulate directly.
+- `PackedGF2Matrix<T>`: stores each row as a packed unsigned integer type
+  such as `u8`, `u16`, `u32`, `u64`, or `u128`.
+  This is more compact and allows efficient XOR-based row operations.
+
+Use `GF2Matrix` when clarity is more important.
+Use `PackedGF2Matrix` when performance or memory efficiency matters.
 
 ## License
 MIT
@@ -75,7 +125,7 @@ This project is under active development, with a focus on both research and prac
 
 Current and planned directions include:
 - improving the internal design of GF(2) matrices
-- adding optimized representations (e.g. bit-packed storage)
+- adding functionality for optimized bit-packed matrix representations
 - generalizing the Rust core to support linear algebra over arbitrary fields
 
 The Python bindings (`gf2_lin_algebra`) are intentionally limited to GF(2), while the Rust crate (`lin_algebra`) aims to be more general.
