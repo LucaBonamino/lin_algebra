@@ -10,7 +10,6 @@ use crate::matrix::{Matrix, MatrixCommon, MatrixTrait};
 pub type GF2Matrix = Matrix<u8>;
 
 impl MatrixTrait<u8> for GF2Matrix {
-
     /// Checks if a GF(2) matrix is in reduced row echelon form (RREF).
     ///
     /// # Returns
@@ -67,13 +66,12 @@ impl MatrixTrait<u8> for GF2Matrix {
     /// # Returns
     /// A vector of row vectors, each representing a basis vector of the kernel.
     fn kernel(&self) -> Vec<Vec<u8>> {
-        if self.is_reduced_echelon() {
-            println!("{:?}", self.elements);
-            return self.kernel_echelon_form();
-        } else {
-            let (ech_form, _) = self.echelon_form();
-            println!("{:?}", ech_form);
-            return ech_form.kernel_echelon_form();
+        match self.is_reduced_echelon() {
+            true => self.kernel_echelon_form(),
+            false => {
+                let (ech_form, _) = self.echelon_form();
+                ech_form.kernel_echelon_form()
+            }
         }
     }
 
