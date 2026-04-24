@@ -41,7 +41,7 @@ fn main() {
     )
     let (educed_echelon_form, row_operations) = gf2_mat.echelon_form();
 
-    println!("Reduces echelon form {:?}", educed_echelon_form);
+    println!("Reduced echelon form {:?}", educed_echelon_form);
     println!(
         "Row operation applied to reach the reduces echelon form {:?}", row_operations
     );
