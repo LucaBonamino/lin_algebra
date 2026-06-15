@@ -290,6 +290,64 @@ impl<T: Number> PackedGF2Matrix<T> {
         }
         (m_copy, operations)
     }
+
+    fn get_pivot(&self, row: usize) -> Option<usize> {
+        for col in 0..self.ncols() {
+            if self.get_element(row, col) == 1 {
+                return Some(col);
+            }
+        }
+
+        None
+    }
+
+    pub fn is_echelon_form(&self) -> bool {
+        let mut previous_pivot: Option<usize> = None;
+        let mut seen_zero_row = false;
+
+        for row in 0..self.nrows() {
+            match self.get_pivot(row) {
+                None => {
+                    seen_zero_row = true;
+                }
+                Some(pivot) => {
+                    if seen_zero_row {
+                        return false;
+                    }
+
+                    if let Some(previous) = previous_pivot {
+                        if pivot <= previous {
+                            return false;
+                        }
+                    }
+
+                    previous_pivot = Some(pivot);
+                }
+            }
+        }
+
+        true
+    }
+
+    pub fn rank_echelon(&self) -> usize {
+        self.elements
+            .iter()
+            .filter(|&&row| row != T::zero())
+            .count()
+    }
+
+    pub fn rank(&self) -> usize {
+        let echelon = self.echelon_form();
+        echelon.0.rank_echelon()
+    }
+
+    pub fn rank_if_echelon(&self) -> Option<usize> {
+        if self.is_echelon_form() {
+            Some(self.rank_echelon())
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
