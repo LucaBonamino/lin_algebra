@@ -1,5 +1,5 @@
 use num_traits::{One, Zero};
-use std::ops::{BitAnd, BitXor, Shr, Shl};
+use std::ops::{BitAnd, BitXor, Shl, Shr};
 
 pub trait Number:
     Copy
