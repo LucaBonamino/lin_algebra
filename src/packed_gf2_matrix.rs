@@ -301,7 +301,11 @@ impl<T: Number> PackedGF2Matrix<T> {
         None
     }
 
-    pub fn is_echelon_form(&self) -> bool {
+    /// Checks if a GF(2) matrix is in reduced row echelon form (RREF).
+    ///
+    /// # Returns
+    /// `true` if the matrix is in reduced row echelon form; otherwise, `false`.
+    pub fn is_reduced_echelon(&self) -> bool {
         let mut previous_pivot: Option<usize> = None;
         let mut seen_zero_row = false;
 
@@ -329,6 +333,11 @@ impl<T: Number> PackedGF2Matrix<T> {
         true
     }
 
+    /// Computes the rank of the linear applocation represented by a packed GF(2) matrix which is already in echelon form.
+    ///
+    /// # Returns
+    /// An integer representing the rank of the matrix.
+    ///
     pub fn rank_echelon(&self) -> usize {
         self.elements
             .iter()
@@ -336,17 +345,97 @@ impl<T: Number> PackedGF2Matrix<T> {
             .count()
     }
 
+    /// Computes the rank of the linear applocation represented by a GF(2) Bitpacked matrix.
+    ///
+    /// It first converts the matrix to its RREF before computing the rank.
+    ///
+    /// # Returns
+    /// An integer representing the rank of the matrix.
+    ///
     pub fn rank(&self) -> usize {
         let echelon = self.echelon_form();
         echelon.0.rank_echelon()
     }
 
+    /// Computes the rank of the linear applocation represented by a packed GF(2) matrix if the matrix is already in echelon form.
+    /// If the matrix is not in reduces echelon form, it returns None.
+    /// # Returns
+    /// An integer representing the rank of the matrix.
+    ///
     pub fn rank_if_echelon(&self) -> Option<usize> {
-        if self.is_echelon_form() {
+        if self.is_reduced_echelon() {
             Some(self.rank_echelon())
         } else {
             None
         }
+    }
+
+    fn get_value_element(&self, value: T, col: usize) -> u8 {
+        ((value.into_usize() >> (self.ncols() - 1 - col)) & 1) as u8
+    }
+
+    fn toggle_value_bit(&self, value: &mut T, col: usize) {
+        *value = *value ^ (T::one() << (self.ncols() - 1 - col));
+    }
+
+    /// Computes a basis of the kernel of a bit-packed GF(2) matrix already in reduced echelon form.
+    ///
+    /// The returned vectors are also bit-packed using MSB order.
+    pub fn kernel_echelon_form(&self) -> Vec<T> {
+        assert!(
+            self.is_reduced_echelon(),
+            "kernel_echelon_form expects the matrix to be in echelon form"
+        );
+
+        let cols = self.ncols();
+
+        let mut pivots: Vec<(usize, usize)> = Vec::new(); // (pivot_col, pivot_row)
+        let mut is_pivot_col = vec![false; cols];
+
+        for row in 0..self.nrows() {
+            if let Some(pivot_col) = self.get_pivot(row) {
+                pivots.push((pivot_col, row));
+                is_pivot_col[pivot_col] = true;
+            }
+        }
+
+        let mut kernel_basis: Vec<T> = Vec::new();
+
+        for free_col in 0..cols {
+            if is_pivot_col[free_col] {
+                continue;
+            }
+
+            let mut kernel_vector = T::zero();
+
+            // Set the free variable to 1.
+            self.toggle_value_bit(&mut kernel_vector, free_col);
+
+            // Solve pivot variables by back-substitution.
+            for &(pivot_col, pivot_row) in pivots.iter().rev() {
+                let mut sum = 0u8;
+
+                for col in (pivot_col + 1)..cols {
+                    let a = self.get_element(pivot_row, col);
+                    let x = self.get_value_element(kernel_vector, col);
+                    sum ^= a & x;
+                }
+
+                if sum == 1 {
+                    self.toggle_value_bit(&mut kernel_vector, pivot_col);
+                }
+            }
+
+            kernel_basis.push(kernel_vector);
+        }
+
+        kernel_basis
+    }
+
+    /// Computes a basis of the kernel of any packed GF(2) matrix.
+    pub fn kernel(&self) -> Vec<T> {
+        let (echelon, _) = self.echelon_form();
+        echelon.kernel_echelon_form()
     }
 }
 
