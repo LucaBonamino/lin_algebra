@@ -147,16 +147,6 @@ impl<T: Number> PackedGF2Matrix<T> {
     /// - The input vector is moved into the matrix without cloning.
     /// - The resulting matrix has `vect.len()` columns in its packed representation.
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
-    /// # use lin_algebra::matrix::Number;
-    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
-    /// let (echelon, ops) = m.echelon_form();
-    ///
-    /// assert_eq!(m.ncols(), 3);
-    /// ```
     pub fn from_vec(vect: Vec<T>) -> Self {
         let n = vect.len();
         Self {
@@ -211,84 +201,209 @@ impl<T: Number> PackedGF2Matrix<T> {
         self.elements.swap(idx1, idx2);
     }
 
-    /// Computes the row echelon form of the bit-packed matrix over GF(2).
+    /// Reduces this matrix in place to row-reduced echelon form over GF(2).
     ///
-    ///
-    /// In addition to the transformed matrix, it records the sequence of
-    /// elementary row operations applied during the elimination process.   
+    /// This method modifies the matrix directly and returns the ordered list of row
+    /// operations used during elimination.
     ///
     /// # Row Operations
     ///
+    /// The returned operations are ordered and can be applied to the original matrix
+    /// to reproduce the final state of `self`.
+    ///
     /// The following row operations may be recorded:
     ///
-    /// - `(i, j)` with `i != j` represents adding row `j` to row `i`
-    ///   (that is, `row_i <- row_i + row_j` over GF(2)).
-    /// - A row swap between `r` and `i` is encoded as three additions:
-    ///   `(r, i)`, `(i, r)`, `(r, i)`.
-    ///
-    /// This encoding is valid over GF(2), where swapping two rows can be
-    /// expressed as a sequence of XOR-based row additions.
-    ///
-    /// # Returns
-    ///
-    /// A pair `(echelon_matrix, operations)` where:
-    ///
-    /// - `echelon_matrix` is the row echelon form of the matrix.
-    /// - `operations` is the list of row operations used to obtain it.
+    ///  - `(i, j)` with `i != j` represents adding row `j` to row `i`: `row_i <- row_i + row_j`.
+    /// - A row swap between rows `r` and `i` is encoded as three row additions:
+    ///  `(r, i)`, `(i, r)`, `(r, i)`.
     ///
     /// # Notes
-    ///
-    /// - The computation is performed on a clone of the matrix; the original
-    ///   matrix is not modified.
-    /// - Since the matrix is over GF(2), pivots are always `1`.
-    /// - The elimination clears all other `1`s in each pivot column, so the
-    ///   result is closer to a reduced row echelon form than to a strictly
-    ///   upper-triangular echelon form.
+    /// - This method does not clone the matrix.
+    /// - The original contents of the matrix are overwritten.
+    /// - This method allocates a new `Vec` for the returned operations.
+    /// - If you want to reuse the operations vector allocation across repeated
+    /// calls, use [`Self::echelon_form_in_place_with_ops`].
     ///
     /// # Example
     ///
     /// ```rust
     /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
-    /// # use lin_algebra::matrix::Number;
-    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
-    /// let (echelon, ops) = m.echelon_form();
-    /// // `echelon` contains the transformed matrix over GF(2),
-    /// // and `ops` contains the recorded row operations.
+    /// let mut m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    ///
+    /// let ops = m.echelon_form_in_place();
+    ///
+    /// // `m` is now in row-reduced echelon form.
+    /// // `ops` contains the recorded row operations.
     /// ```
-    pub fn echelon_form(&self) -> (Self, Vec<(usize, usize)>) {
-        let mut m_copy = self.clone();
+    pub fn echelon_form_in_place(&mut self) -> Vec<(usize, usize)> {
+        let mut operations = Vec::new();
+        self.echelon_form_in_place_with_ops(&mut operations);
+        operations
+    }
+
+    /// Reduces this matrix in place to row-reduced echelon form over GF(2),
+    /// reusing the provided operations buffer.
+    /// This method is intended for performance-sensitive code that repeatedly
+    /// computes row-reduced echelon forms and wants to avoid allocating a new
+    /// operations vector on every call.
+    ///
+    /// The provided `operations` vector is cleared before new operations are
+    /// recorded. Its existing capacity is retained.
+    ///
+    /// # Row operations
+    ///
+    /// The recorded operations are ordered and can be applied to the original matrix
+    /// to reproduce the final state of `self`.
+    ///
+    /// The following row operations may be recorded:
+    ///
+    ///  - `(i, j)` with `i != j` represents adding row `j` to row `i`: `row_i <- row_i + row_j`.
+    ///  - A row swap between rows `r` and `i` is encoded as three row additions:
+    /// `(r, i)`, `(i, r)`, `(r, i)`.
+    ///
+    ///  # Notes
+    ///
+    ///  - This method does not clone the matrix.
+    /// - The original contents of the matrix are overwritten.
+    /// - `operations.clear()` is called before recording new operations.
+    /// - Clearing the vector removes old operations but keeps the allocated capacity for reuse.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let original = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    /// let mut work = original.clone();
+    /// let mut ops = Vec::new();
+    ///
+    /// work.clone_from(&original);
+    /// work.echelon_form_in_place_with_ops(&mut ops);
+    /// // `work` is now in row-reduced echelon form.
+    /// // `ops` contains the recorded row operations.
+    /// ```
+    pub fn echelon_form_in_place_with_ops(&mut self, operations: &mut Vec<(usize, usize)>) {
+        operations.clear();
+
         let mut lead = 0;
-        let mut operations: Vec<(usize, usize)> = Vec::new();
+
         for r in 0..self.nrows() {
             if lead >= self.ncols() {
                 break;
             }
+
             let mut i = r;
-            while m_copy.get_element(i, lead) == 0 {
+
+            while self.get_element(i, lead) == 0 {
                 i += 1;
+
                 if i == self.nrows() {
                     i = r;
                     lead += 1;
+
                     if lead == self.ncols() {
-                        return (m_copy, operations);
+                        return;
                     }
                 }
             }
-            m_copy.swap_rows(r, i);
+
+            self.swap_rows(r, i);
+
             if r != i {
                 operations.push((r, i));
                 operations.push((i, r));
                 operations.push((r, i));
             }
+
             for i in 0..self.nrows() {
-                if i != r && m_copy.get_element(i, lead) == 1 {
-                    m_copy.elements[i] = m_copy.elements[i] ^ m_copy.elements[r];
+                if i != r && self.get_element(i, lead) == 1 {
+                    self.elements[i] = self.elements[i] ^ self.elements[r];
                     operations.push((i, r));
                 }
             }
-            lead += 1
+
+            lead += 1;
         }
-        (m_copy, operations)
+    }
+
+    /// Converts this matrix into row-reduced echelon form over GF(2).
+    ///
+    /// This method consumes the matrix, performs Gauss-Jordan-style elimination
+    /// in place, and returns the transformed matrix together with the recorded row operations.
+    ///
+    /// Because this method takes ownership of `self`, it does not clone the matrix.
+    /// If the original matrix must be preserved, clone it before calling this method or use [`Self::echelon_form`].
+    ///
+    /// # Returns
+    ///
+    /// A pair `(reduced_matrix, operations)` where:
+    ///
+    /// - `reduced_matrix` is the row-reduced echelon form of the matrix.
+    /// - `operations` is the ordered list of row operations used to obtain it.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    /// let (rref, ops) = m.into_echelon_form();
+    ///
+    /// // `m` has been consumed.
+    /// // `rref` contains the transformed matrix over GF(2).
+    /// ```
+    pub fn into_echelon_form(mut self) -> (Self, Vec<(usize, usize)>) {
+        let operations = self.echelon_form_in_place();
+        (self, operations)
+    }
+
+    /// Computes a row-reduced echelon form of the bit-packed matrix over GF(2).
+    ///
+    /// This method does not modify the original matrix. It clones `self`, performs
+    /// elimination on the clone, and returns the transformed matrix together with
+    /// the sequence of elementary row operations used during elimination.
+    ///
+    /// Over GF(2), row addition is implemented as XOR, and every nonzero pivot is
+    /// equal to `1`.
+    ///
+    /// # Row Operations
+    ///
+    /// The returned operations are ordered and can be applied to the original matrix
+    /// to reproduce the returned echelon matrix.
+    ///
+    /// The following row operations may be recorded:
+    ///
+    /// - `(i, j)` with `i != j` represents adding row `j` to row `i`:
+    ///   `row_i <- row_i + row_j`.
+    /// - A row swap between rows `r` and `i` is encoded as three row additions:
+    ///   `(r, i)`, `(i, r)`, `(r, i)`.
+    ///
+    /// This swap encoding is valid over GF(2), where row addition is XOR.
+    ///
+    /// # Returns
+    ///
+    /// A pair `(echelon_matrix, operations)` where:
+    ///
+    /// - `echelon_matrix` is the transformed matrix.
+    /// - `operations` is the list of row operations used to obtain it.
+    ///
+    /// # Notes
+    /// - The original matrix is not modified.
+    /// - This method allocates a cloned matrix.
+    /// - If you want to avoid cloning, use [`Self::into_echelon_form`] or [`Self::echelon_form_in_place`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    ///
+    /// let (echelon, ops) = m.echelon_form();
+    ///
+    /// // `m` is unchanged.
+    /// // `echelon` contains the transformed matrix over GF(2).
+    /// // `ops` contains the recorded row operations.
+    /// ```
+    pub fn echelon_form(&self) -> (Self, Vec<(usize, usize)>) {
+        self.clone().into_echelon_form()
     }
 
     fn get_pivot(&self, row: usize) -> Option<usize> {
@@ -436,6 +551,94 @@ impl<T: Number> PackedGF2Matrix<T> {
     pub fn kernel(&self) -> Vec<T> {
         let (echelon, _) = self.echelon_form();
         echelon.kernel_echelon_form()
+    }
+
+    /// Computes a basis for the image of a bit-packed GF(2) matrix already in
+    /// reduced row echelon form.
+    ///
+    /// The returned basis vectors are the nonzero rows of the matrix, stored in the
+    /// same bit-packed row representation used internally.
+    ///
+    /// # Returns
+    ///
+    /// A vector of bit-packed rows, each representing a basis vector of the image.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the matrix is not in reduced row echelon form.
+    ///
+    /// # Notes
+    ///
+    /// - This method does not clone the matrix.
+    /// - This method assumes that nonzero rows of the reduced matrix form the image
+    ///   basis.
+    /// - Use [`Self::image`] if the matrix may not already be reduced.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let m = PackedGF2Matrix::new(vec![0b100u8, 0b010u8, 0b000u8], 3);
+    ///
+    /// let image_basis = m.image_echelon_form();
+    ///
+    /// assert_eq!(image_basis, vec![0b100u8, 0b010u8]);
+    /// ```
+    pub fn image_echelon_form(&self) -> Vec<T> {
+        assert!(
+            self.is_reduced_echelon(),
+            "image_echelon_form expects the matrix to be in reduced echelon form"
+        );
+
+        self.elements
+            .iter()
+            .copied()
+            .filter(|&row| row != T::zero())
+            .collect()
+    }
+
+    /// Computes a basis for the image of the linear map represented by this
+    /// bit-packed GF(2) matrix.
+    ///
+    /// If the matrix is not already in reduced row echelon form, this method first
+    /// computes its echelon form. Despite the historical name `echelon_form`, that
+    /// method performs Gauss-Jordan-style elimination and returns a row-reduced
+    /// echelon form.
+    ///
+    /// The returned basis vectors are stored in the same bit-packed row
+    /// representation used internally by the matrix.
+    ///
+    /// # Returns
+    ///
+    /// A vector of bit-packed rows, each representing a basis vector of the image.
+    ///
+    /// # Notes
+    ///
+    /// - The original matrix is not modified.
+    /// - If the matrix is already in reduced echelon form, no matrix clone is
+    ///   needed to extract the image basis.
+    /// - If the matrix is not reduced, this method allocates a transformed matrix
+    ///   by calling [`Self::echelon_form`].
+    /// - Zero rows are ignored.
+    /// - Nonzero rows of the reduced matrix form the returned basis.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use lin_algebra::packed_gf2_matrix::PackedGF2Matrix;
+    /// let m = PackedGF2Matrix::new(vec![0b110u8, 0b101u8, 0b011u8], 3);
+    ///
+    /// let image_basis = m.image();
+    ///
+    /// // Each entry of `image_basis` is a bit-packed row.
+    /// ```
+    pub fn image(&self) -> Vec<T> {
+        if self.is_reduced_echelon() {
+            self.image_echelon_form()
+        } else {
+            let (echelon, _) = self.echelon_form();
+            echelon.image_echelon_form()
+        }
     }
 }
 
