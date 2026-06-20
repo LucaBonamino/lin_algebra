@@ -1,5 +1,5 @@
 use num_traits::{One, Zero};
-use std::ops::{BitAnd, BitXor, Shr};
+use std::ops::{BitAnd, BitXor, Shl, Shr};
 
 pub trait Number:
     Copy
@@ -8,6 +8,7 @@ pub trait Number:
     + BitXor<Output = Self>
     + BitAnd<Output = Self>
     + Shr<usize, Output = Self>
+    + Shl<usize, Output = Self>
     + Zero
     + One
 {
