@@ -21,6 +21,7 @@ pub struct PackedGF2Matrix<T: Number> {
 }
 
 impl<T: Number> PackedGF2Matrix<T> {
+    
     /// Creates a new integer-encoded matrix.
     ///
     /// # Arguments
@@ -40,6 +41,14 @@ impl<T: Number> PackedGF2Matrix<T> {
             elements: elements,
             n: n,
         }
+    }
+
+    fn get_packed_bit(value: T, len: usize, idx: usize) -> u8 {
+        ((value.into_usize() >> (len - 1 - idx)) & 1) as u8
+    }
+
+    fn toggle_packed_bit(value: &mut T, len: usize, idx: usize) {
+        *value = *value ^ (T::one() << (len - 1 - idx));
     }
 
     /// Returns the number of rows in the matrix.
@@ -486,11 +495,11 @@ impl<T: Number> PackedGF2Matrix<T> {
     }
 
     fn get_value_element(&self, value: T, col: usize) -> u8 {
-        ((value.into_usize() >> (self.ncols() - 1 - col)) & 1) as u8
+        Self::get_packed_bit(value, self.ncols(), col)
     }
 
     fn toggle_value_bit(&self, value: &mut T, col: usize) {
-        *value = *value ^ (T::one() << (self.ncols() - 1 - col));
+        Self::toggle_packed_bit(value, self.ncols(), col);
     }
 
     /// Computes a basis of the kernel of a bit-packed GF(2) matrix already in reduced echelon form.
@@ -639,6 +648,168 @@ impl<T: Number> PackedGF2Matrix<T> {
             let (echelon, _) = self.echelon_form();
             echelon.image_echelon_form()
         }
+    }
+
+    /// Applies a sequence of GF(2) row operations to a packed vector.
+    ///
+    /// The packed vector is interpreted as having length `len`.
+    ///
+    /// Each operation `(i, j)` represents:
+    ///
+    /// `v_i <- v_i + v_j`
+    ///
+    /// Since the entries are in GF(2), addition is XOR.
+    fn apply_operations_packed(operations: &[(usize, usize)], mut value: T, len: usize) -> T {
+        for &(i, j) in operations {
+            if Self::get_packed_bit(value, len, j) == 1 {
+                Self::toggle_packed_bit(&mut value, len, i);
+            }
+        }
+
+        value
+    }
+
+    /// Returns `true` if all bits from `start` to `len - 1` are zero.
+    fn packed_suffix_is_zero(value: T, len: usize, start: usize) -> bool {
+        for idx in start..len {
+            if Self::get_packed_bit(value, len, idx) == 1 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    /// Keeps the first `new_len` bits of a packed vector of length `old_len`.
+    ///
+    /// This is useful after elimination, where the first `self.ncols()` entries
+    /// contain the solution and the remaining entries correspond to zero rows.
+    fn truncate_packed_prefix(value: T, old_len: usize, new_len: usize) -> T {
+        let mut result = T::zero();
+
+        for idx in 0..new_len {
+            if Self::get_packed_bit(value, old_len, idx) == 1 {
+                Self::toggle_packed_bit(&mut result, new_len, idx);
+            }
+        }
+
+        result
+    }
+
+    /// Returns the column of the bit-packed matrix at index `idx`, packed as a
+    /// value of type `T`.
+    ///
+    /// The returned packed vector has length `self.nrows()`.
+    pub fn column_packed(&self, idx: usize) -> T {
+        assert!(
+            idx < self.ncols(),
+            "column index out of bounds: index is {}, but matrix has {} columns",
+            idx,
+            self.ncols()
+        );
+
+        let mut column = T::zero();
+
+        for row in 0..self.nrows() {
+            if self.get_element(row, idx) == 1 {
+                Self::toggle_packed_bit(&mut column, self.nrows(), row);
+            }
+        }
+
+        column
+    }
+
+    /// Solves the linear system `A * x = b` over GF(2), where `A` is this
+    /// bit-packed matrix and `b` is a packed right-hand side vector.
+    ///
+    /// The right-hand side vector `b` is interpreted as a packed vector of length
+    /// `self.nrows()`. The returned solution vector is packed as a value of type
+    /// `T` with length `self.ncols()`.
+    ///
+    /// # Returns
+    ///
+    /// A packed integer representing the solution vector `x`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// - the matrix does not have full column rank.
+    /// - the system is inconsistent.
+    pub fn solve(&self, b: T) -> T {
+        let (echelon, operations) = self.echelon_form();
+        let rank = echelon.rank_echelon();
+
+        if rank < self.ncols() {
+            panic!("Matrix must have full rank");
+        }
+
+        let solved_b = Self::apply_operations_packed(&operations, b, self.nrows());
+
+        if !Self::packed_suffix_is_zero(solved_b, self.nrows(), rank) {
+            panic!("Linear system is inconsistent");
+        }
+
+        Self::truncate_packed_prefix(solved_b, self.nrows(), self.ncols())
+    }
+
+    /// Solves the matrix equation `A * X = Y` over GF(2), where `A` is this
+    /// bit-packed matrix and `Y` is a bit-packed right-hand side matrix.
+    ///
+    /// The returned solution matrix `X` is also bit-packed.
+    ///
+    /// If `A` has shape `m x n` and `Y` has shape `m x k`, then the returned
+    /// matrix has shape `n x k`.
+    ///
+    /// # Returns
+    ///
+    /// A bit-packed matrix `X` such that `self * X = y`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    ///
+    /// - `self.nrows() != y.nrows()`.
+    /// - the matrix does not have full column rank.
+    /// - the system is inconsistent for at least one column of `y`.
+    pub fn solve_matrix_system(&self, y: &PackedGF2Matrix<T>) -> PackedGF2Matrix<T> {
+        assert_eq!(
+            self.nrows(),
+            y.nrows(),
+            "left-hand side and right-hand side must have the same number of rows"
+        );
+
+        let (echelon, operations) = self.echelon_form();
+        let rank = echelon.rank_echelon();
+
+        if rank < self.ncols() {
+            panic!("Matrix must have full rank");
+        }
+
+        let n_rows = self.ncols(); // rows of X
+        let n_cols = y.ncols(); // columns of X
+
+        let mut solution_rows = vec![T::zero(); n_rows];
+
+        for col in 0..n_cols {
+            let rhs_col = y.column_packed(col);
+
+            let solved_col = Self::apply_operations_packed(&operations, rhs_col, self.nrows());
+
+            if !Self::packed_suffix_is_zero(solved_col, self.nrows(), rank) {
+                panic!("Linear system is inconsistent");
+            }
+
+            let solution_col = Self::truncate_packed_prefix(solved_col, self.nrows(), self.ncols());
+
+            for row in 0..n_rows {
+                if Self::get_packed_bit(solution_col, n_rows, row) == 1 {
+                    Self::toggle_packed_bit(&mut solution_rows[row], n_cols, col);
+                }
+            }
+        }
+
+        PackedGF2Matrix::new(solution_rows, n_cols)
     }
 }
 
