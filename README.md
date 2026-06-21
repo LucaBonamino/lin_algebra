@@ -1,4 +1,8 @@
 # lin_algebra
+
+[![Crates.io](https://img.shields.io/crates/v/lin_algebra.svg)](https://crates.io/crates/lin_algebra)
+[![Docs.rs](https://docs.rs/lin_algebra/badge.svg)](https://docs.rs/lin_algebra)
+
 A Rust library for linear algebra.
 
 ## Features
@@ -29,6 +33,7 @@ lin_algebra = "0.5.0"
 ```
 
 ## Usage
+
 ```Rust
 use lin_algebra::gf2_matrix::GF2Matrix;
 use lin_algebra::matrix::MatrixTrait;
@@ -67,6 +72,8 @@ fn main() {
 
 }
 ```
+
+Use bit-packed GF(2) matrices.
 ```rust
 use lin_algebra::packed_gf2_matrix::{BitOrder, PackedGF2Matrix};
 
